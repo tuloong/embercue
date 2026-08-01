@@ -15,12 +15,14 @@ public struct WorkbenchView: View {
     private let onCopyAndReturn: () -> Void
     private let onExport: () -> Void
     private let onHide: () -> Void
+    private let onCheckForUpdates: () -> Void
 
-    public init(model: WorkbenchModel, onCopyAndReturn: @escaping () -> Void, onExport: @escaping () -> Void, onHide: @escaping () -> Void) {
+    public init(model: WorkbenchModel, onCopyAndReturn: @escaping () -> Void, onExport: @escaping () -> Void, onHide: @escaping () -> Void, onCheckForUpdates: @escaping () -> Void = {}) {
         self.model = model
         self.onCopyAndReturn = onCopyAndReturn
         self.onExport = onExport
         self.onHide = onHide
+        self.onCheckForUpdates = onCheckForUpdates
     }
 
     public var body: some View {
@@ -83,6 +85,7 @@ public struct WorkbenchView: View {
                     if model.copySelected() { onCopyAndReturn() }
                 },
                 export: onExport,
+                checkForUpdates: onCheckForUpdates,
                 hide: onHide
             )
             .frame(width: AppTheme.Size.topControlHeight, height: AppTheme.Size.topControlHeight)
@@ -183,16 +186,17 @@ private struct MoreMenuAnchor: NSViewRepresentable {
     let canCopyAndReturn: Bool
     let copyAndReturn: () -> Void
     let export: () -> Void
+    let checkForUpdates: () -> Void
     let hide: () -> Void
 
     func makeNSView(context: Context) -> MoreMenuButton {
         let button = MoreMenuButton(frame: NSRect(x: 0, y: 0, width: AppTheme.Size.topControlHeight, height: AppTheme.Size.topControlHeight))
-        button.configure(page: page, togglePage: togglePage, newSection: newSection, keepClipboard: keepClipboard, selectedTextCaptureStatus: selectedTextCaptureStatus, selectedTextCaptureAction: selectedTextCaptureAction, canCopyAndReturn: canCopyAndReturn, copyAndReturn: copyAndReturn, export: export, hide: hide)
+        button.configure(page: page, togglePage: togglePage, newSection: newSection, keepClipboard: keepClipboard, selectedTextCaptureStatus: selectedTextCaptureStatus, selectedTextCaptureAction: selectedTextCaptureAction, canCopyAndReturn: canCopyAndReturn, copyAndReturn: copyAndReturn, export: export, checkForUpdates: checkForUpdates, hide: hide)
         return button
     }
 
     func updateNSView(_ button: MoreMenuButton, context: Context) {
-        button.configure(page: page, togglePage: togglePage, newSection: newSection, keepClipboard: keepClipboard, selectedTextCaptureStatus: selectedTextCaptureStatus, selectedTextCaptureAction: selectedTextCaptureAction, canCopyAndReturn: canCopyAndReturn, copyAndReturn: copyAndReturn, export: export, hide: hide)
+        button.configure(page: page, togglePage: togglePage, newSection: newSection, keepClipboard: keepClipboard, selectedTextCaptureStatus: selectedTextCaptureStatus, selectedTextCaptureAction: selectedTextCaptureAction, canCopyAndReturn: canCopyAndReturn, copyAndReturn: copyAndReturn, export: export, checkForUpdates: checkForUpdates, hide: hide)
     }
 }
 
@@ -206,6 +210,7 @@ private final class MoreMenuButton: NSButton {
     private var canCopyAndReturn = false
     private var copyAndReturn: (() -> Void)?
     private var exportLibrary: (() -> Void)?
+    private var checkForUpdates: (() -> Void)?
     private var hide: (() -> Void)?
 
     override init(frame frameRect: NSRect) {
@@ -238,7 +243,7 @@ private final class MoreMenuButton: NSButton {
         }
     }
 
-    func configure(page: WorkbenchPage, togglePage: @escaping () -> Void, newSection: @escaping () -> Void, keepClipboard: @escaping () -> Void, selectedTextCaptureStatus: SelectedTextCaptureStatus, selectedTextCaptureAction: @escaping () -> Void, canCopyAndReturn: Bool, copyAndReturn: @escaping () -> Void, export: @escaping () -> Void, hide: @escaping () -> Void) {
+    func configure(page: WorkbenchPage, togglePage: @escaping () -> Void, newSection: @escaping () -> Void, keepClipboard: @escaping () -> Void, selectedTextCaptureStatus: SelectedTextCaptureStatus, selectedTextCaptureAction: @escaping () -> Void, canCopyAndReturn: Bool, copyAndReturn: @escaping () -> Void, export: @escaping () -> Void, checkForUpdates: @escaping () -> Void, hide: @escaping () -> Void) {
         self.page = page
         self.togglePage = togglePage
         self.newSection = newSection
@@ -248,6 +253,7 @@ private final class MoreMenuButton: NSButton {
         self.canCopyAndReturn = canCopyAndReturn
         self.copyAndReturn = copyAndReturn
         exportLibrary = export
+        self.checkForUpdates = checkForUpdates
         self.hide = hide
         needsDisplay = true
     }
@@ -264,6 +270,7 @@ private final class MoreMenuButton: NSButton {
         copyAndReturnItem.isEnabled = canCopyAndReturn
         menu.addItem(copyAndReturnItem)
         menu.addItem(item("Export Library Metadata…", action: #selector(exportAction)))
+        menu.addItem(item("Check for Updates…", action: #selector(checkForUpdatesAction)))
         let hideItem = item(WorkbenchLifecycleMenuTitles.hideToMenuBar, action: #selector(hideAction)); hideItem.keyEquivalent = "\u{1b}"; menu.addItem(hideItem)
         menu.addItem(.separator())
         let quitItem = NSMenuItem(title: WorkbenchLifecycleMenuTitles.quit, action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -271,7 +278,7 @@ private final class MoreMenuButton: NSButton {
         quitItem.target = NSApp
         menu.addItem(quitItem)
         menu.addItem(.separator())
-        let privacy = NSMenuItem(title: "Local only. Embercue does not sync or track your notes.", action: nil, keyEquivalent: "")
+        let privacy = NSMenuItem(title: "Notes stay local. Updates check GitHub only when requested.", action: nil, keyEquivalent: "")
         privacy.isEnabled = false
         menu.addItem(privacy)
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: bounds.height), in: self)
@@ -289,6 +296,7 @@ private final class MoreMenuButton: NSButton {
     @objc private func selectedTextCaptureActionTriggered() { selectedTextCaptureAction?() }
     @objc private func copyAndReturnAction() { copyAndReturn?() }
     @objc private func exportAction() { exportLibrary?() }
+    @objc private func checkForUpdatesAction() { checkForUpdates?() }
     @objc private func hideAction() { hide?() }
 }
 

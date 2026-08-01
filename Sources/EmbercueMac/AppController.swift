@@ -51,7 +51,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             applicationActivationRelay = activationRelay
             workbench.onDocumentChange = { [weak self] in self?.updateQueueCount() }
             let tracker = ForegroundApplicationTracker()
-            let panel = PanelController(rootView: WorkbenchView(model: workbench, onCopyAndReturn: { [weak self] in self?.panelController?.hideAndReturn() }, onExport: { [weak self] in self?.exportLibrary() }, onHide: { [weak self] in self?.panelController?.hide() }), tracker: tracker, appearance: Self.qaAppearance(), onShortcut: { workbench.handleShortcut($0) }, onShow: { workbench.requestComposerFocus() }, onHide: { workbench.clearCompletionEcho() })
+            let panel = PanelController(rootView: WorkbenchView(model: workbench, onCopyAndReturn: { [weak self] in self?.panelController?.hideAndReturn() }, onExport: { [weak self] in self?.exportLibrary() }, onHide: { [weak self] in self?.panelController?.hide() }, onCheckForUpdates: { [weak self] in self?.checkForUpdates() }), tracker: tracker, appearance: Self.qaAppearance(), onShortcut: { workbench.handleShortcut($0) }, onShow: { workbench.requestComposerFocus() }, onHide: { workbench.clearCompletionEcho() })
             panelController = panel
             let coordinator = HotKeyAvailabilityCoordinator(hotKey: CarbonGlobalHotKey())
             coordinator.composeMenuFallback { [weak self] in
@@ -105,6 +105,31 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func updateQueueCount() {
         let count = model?.document.items(kind: .prompt, states: [.active]).count ?? 0
         statusItemController?.updateQueueCount(count)
+    }
+
+    private func checkForUpdates() {
+        GitHubReleaseUpdateChecker().check { [weak self] result in
+            let alert = NSAlert()
+            switch result {
+            case let .updateAvailable(version, releaseURL):
+                alert.messageText = "Embercue \(version) is available"
+                alert.informativeText = "Open the GitHub release page to download it."
+                alert.addButton(withTitle: "Open Download")
+                alert.addButton(withTitle: "Cancel")
+                if alert.runModal() == .alertFirstButtonReturn { NSWorkspace.shared.open(releaseURL) }
+            case .upToDate:
+                alert.messageText = "Embercue is up to date"
+                alert.informativeText = "You already have the latest release."
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            case .unavailable:
+                alert.messageText = "Unable to check for updates"
+                alert.informativeText = "GitHub Releases could not be reached. Try again later."
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            }
+            _ = self
+        }
     }
 
     private func presentStartupError(_ error: Error) {

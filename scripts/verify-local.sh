@@ -21,8 +21,13 @@ if ! rg -q '"identity" : "swift-cmark"' "$ROOT/Package.resolved" || ! rg -q '"ve
 fi
 swift run --package-path "$ROOT" EmbercueChecks >/dev/null
 FORBIDDEN='URLSession|Network[.]|NWConnection|CGEvent[.]post|AXUIElement|addGlobalMonitorForEvents|addLocalMonitorForEvents|WebKit|NSAppleScript'
-if rg -n --glob '*.swift' --glob '!SelectedTextCapture.swift' "$FORBIDDEN" "$ROOT/Sources"; then
+if rg -n --glob '*.swift' --glob '!SelectedTextCapture.swift' --glob '!UpdateChecker.swift' "$FORBIDDEN" "$ROOT/Sources"; then
   echo "Forbidden API reference found" >&2
+  exit 1
+fi
+UPDATE_CHECKER="$ROOT/Sources/EmbercueMac/UpdateChecker.swift"
+if ! rg -q 'https://api.github.com/repos/tuloong/embercue-releases/releases/latest' "$UPDATE_CHECKER" || ! rg -q 'URLSession.shared.dataTask' "$UPDATE_CHECKER" || ! rg -q 'User-Agent' "$UPDATE_CHECKER"; then
+  echo "Update checks must use the fixed public GitHub Releases endpoint with an explicit user agent" >&2
   exit 1
 fi
 CAPTURE_ADAPTER="$ROOT/Sources/EmbercueMac/SelectedTextCapture.swift"

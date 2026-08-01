@@ -1,6 +1,6 @@
 # Embercue
 
-Embercue is a local macOS 14+ rail for holding AI-work notes and next prompts. It is a native SwiftUI/AppKit implementation informed by the publicly available Copper demo, but uses its own name, assets, copy, and safety boundaries. It has no accounts, network client, analytics, telemetry, updater, AI integration, or background clipboard collection.
+Embercue is a local macOS 14+ rail for holding AI-work notes and next prompts. It is a native SwiftUI/AppKit implementation informed by the publicly available Copper demo, but uses its own name, assets, copy, and safety boundaries. It has no accounts, analytics, telemetry, AI integration, or background clipboard collection. **Check for Updates…** makes one user-requested GitHub Releases request and opens the public download page only when a newer release exists.
 
 ## Use
 

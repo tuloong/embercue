@@ -308,6 +308,7 @@ enum EmbercueChecks {
         try fixtureChecks()
         try presentationChecks()
         try adapterRegressionChecks()
+        try updateCheckChecks()
         try cardSelectionInteractionChecks()
         try selectedTextCaptureChecks()
     }
@@ -1299,6 +1300,17 @@ enum EmbercueChecks {
         try require(hideCallbacks == 2, "hideAndReturn must invoke the unified hide callback exactly once")
         let closeResult = lifecyclePanel.windowShouldClose(NSWindow())
         try require(hideCallbacks == 3 && closeResult == BackgroundResidencyPolicy.shouldClosePanel, "windowShouldClose must hide through the same callback exactly once")
+    }
+
+    static func updateCheckChecks() throws {
+        try require(EmbercueVersion("0.1.0")! < EmbercueVersion("0.1.1")!, "numeric update versions must compare by component")
+        try require(EmbercueVersion("v1.2.0")! == EmbercueVersion("1.2")!, "release tags may carry a v prefix and trailing zero components")
+        let newer = Data(#"{"tag_name":"v0.1.1","html_url":"https://github.com/tuloong/embercue-releases/releases/tag/v0.1.1"}"#.utf8)
+        let current = Data(#"{"tag_name":"v0.1.0","html_url":"https://github.com/tuloong/embercue-releases/releases/tag/v0.1.0"}"#.utf8)
+        try require(GitHubReleaseUpdateDecoder.decode(data: newer, statusCode: 200, currentVersion: "0.1.0") == .updateAvailable(version: "v0.1.1", releaseURL: URL(string: "https://github.com/tuloong/embercue-releases/releases/tag/v0.1.1")!), "a newer signed-release page must be offered")
+        try require(GitHubReleaseUpdateDecoder.decode(data: current, statusCode: 200, currentVersion: "0.1.0") == .upToDate, "the current release must not prompt a download")
+        try require(GitHubReleaseUpdateDecoder.decode(data: newer, statusCode: 500, currentVersion: "0.1.0") == .unavailable, "non-success responses must fail closed")
+        try require(GitHubReleaseUpdateDecoder.decode(data: Data("{}".utf8), statusCode: 200, currentVersion: "0.1.0") == .unavailable, "malformed release data must fail closed")
     }
 
     static func cardSelectionInteractionChecks() throws {
